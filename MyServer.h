@@ -24,6 +24,12 @@ struct client_info{
   sockaddr_in client_addr; //客户端地址
 };
 
+struct thread_info{
+  int list_num; //客户端列表的序号
+  int client_sockfd; //客户端套接字
+  sockaddr_in client_addr; //客户端地址
+};
+
 class MyServer{
   private:
     int server_sockfd; //服务器套接字
@@ -35,8 +41,8 @@ class MyServer{
     ~MyServer(); //析构函数
     void on(); //启动服务器
     int get_list_num(); //获得一个list的序号
-    void handle_client(void* arg); //处理客户端请求
 };
 
+void* handle_client(void* thread_info); //处理客户端请求
 
 #endif

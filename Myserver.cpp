@@ -56,8 +56,8 @@ void MyServer::on(){
 
     //输出相关消息
     cout << "A client connected!" << endl;
-    cout << "Client IP: " << inet_ntoa(client_addr.sin_addr) << endl;
-    cout << "Client port: " << ntohs(client_addr.sin_port) << endl;
+    cout << "   Client IP: " << inet_ntoa(client_addr.sin_addr) << endl;
+    cout << "   Client port: " << ntohs(client_addr.sin_port) << endl;
 
     //将客户端信息加入客户端列表
     int list_num = get_list_num();
@@ -67,8 +67,21 @@ void MyServer::on(){
 
     //创建线程处理客户端请求
     pthread_t thread;
-    pthread_create(&thread, NULL, handle_client, (void*)list_num);
+    struct thread_info info = {list_num, client_sockfd, client_addr};
+    pthread_create(&thread, NULL, handle_client, (void *)&info);
   }
+}
+
+int MyServer::get_list_num(){
+  for(int i = 0; i < MAX_CLIENT; i++)
+    if(client_list_situation[i] == 0)
+      return i;
+  return -1;
+}
+
+void *handle_client(void* thread_info){
+  //TODO
+  exit(0);
 }
 
 int main(){
