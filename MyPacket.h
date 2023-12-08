@@ -11,13 +11,14 @@ class MyPacket
   private:
     char type; //消息类型
     char target; //发送目标
-    std::string message; //发送内容
+    
   public:
+    std::string message; //发送内容
     MyPacket(); //构造函数
     MyPacket(char type);
     MyPacket(char type, std::string data);
     MyPacket(char type, std::string data, char target); //构造函数
-    void init_packet(char type, std::string data, char target); //初始化MyPacket
+    void init_packet(char type, std::string data = "", char target = 0); //初始化MyPacket
     char get_type(); //获取消息类型
     char get_target(); //获取消息目标
     std::string get_message(); //获取消息内容

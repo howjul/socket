@@ -55,6 +55,9 @@
     "algorithm": "cpp",
     "__tree": "cpp",
     "map": "cpp",
-    "type_traits": "cpp"
+    "type_traits": "cpp",
+    "deque": "cpp",
+    "regex": "cpp",
+    "thread": "cpp"
   }
 }

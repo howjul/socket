@@ -17,7 +17,8 @@ MyServer::MyServer()
   //初始化服务器地址
   server_addr.sin_family = AF_INET;
   server_addr.sin_port = htons(PORT);
-  server_addr.sin_addr.s_addr = htonl(INADDR_ANY); //表示监听0.0.0.0地址，socket只绑定端口，不绑定本主机的某个特定ip，让路由表决定传到哪个ip
+  //server_addr.sin_addr.s_addr = htonl(INADDR_ANY); //表示监听0.0.0.0地址，socket只绑定端口，不绑定本主机的某个特定ip，让路由表决定传到哪个ip
+  server_addr.sin_addr.s_addr = inet_addr("127.0.0.1");
 
   //绑定服务器套接字和服务器地址
   //bind(server_sockfd, (sockaddr*)&server_addr, sizeof(server_addr));
@@ -123,6 +124,7 @@ void *handle_client(void* thread_info){
   while(true){
     //调用recv函数接收数据
     ssize_t res = recv(client_sockfd, buffer, MAX_BUFFER, 0);
+    cout << buffer << res << endl;
     //若recv返回0，则连接已经关闭，直接break
     if(res == 0) break; 
 
@@ -174,7 +176,7 @@ void type_t(int client_sockfd){
   ss << p->tm_hour << ":" << p->tm_min << ":" << p->tm_sec << endl;
 
   MyPacket send_packet('t', ss.str());
-  cout << " send messsage: " << ss.str() << endl;
+  cout << "   send messsage: " << ss.str();
   send(client_sockfd, send_packet.to_string().c_str(), send_packet.to_string().size(), 0);
 }
 
@@ -184,7 +186,7 @@ void type_n(int client_sockfd){
   string hostname(name);
 
   MyPacket send_packet('n', hostname);
-  cout << " send messsage: " << hostname << endl;
+  cout << "   send messsage: " << hostname;
   send(client_sockfd, send_packet.to_string().c_str(), send_packet.to_string().size(), 0);
 }
 
@@ -192,7 +194,7 @@ void type_d(int client_sockfd){
   string message("disconnect");
 
   MyPacket send_packet('d', message);
-  cout << " send messsage: " << message << endl;
+  cout << "   send messsage: " << message;
   send(client_sockfd, send_packet.to_string().c_str(), send_packet.to_string().size(), 0);
 }
 
@@ -200,7 +202,7 @@ void type_e(int client_sockfd){
   string message("error request type");
 
   MyPacket send_packet('e', message);
-  cout << " send messsage: " << message << endl;
+  cout << "   send messsage: " << message;
   send(client_sockfd, send_packet.to_string().c_str(), send_packet.to_string().size(), 0);
 }
 
@@ -210,13 +212,16 @@ void type_h(int client_sockfd, sockaddr_in client_addr){
   string message = ss.str();
 
   MyPacket send_packet('h', message);
-  cout << " send messsage: " << message << endl;
+  //cout << "   send messsage: " << message;
+  cout << "   send messsage: " << send_packet.to_string();
   send(client_sockfd, send_packet.to_string().c_str(), send_packet.to_string().size(), 0);
+  // int res = send(client_sockfd, send_packet.to_string().c_str(), send_packet.to_string().size(), 0);
+  // cout << res << " hello" << endl;
 }
 
 void type_l(int client_sockfd, MyServer server){
   MyPacket send_packet('l', server.get_list());
-  cout << " send messsage: " << endl << server.get_list() << endl;
+  cout << "   send messsage: " << endl << server.get_list();
   send(client_sockfd, send_packet.to_string().c_str(), send_packet.to_string().size(), 0);
 }
 
@@ -228,14 +233,14 @@ void type_s(int client_sockfd, char targetid, string message, MyServer server){
   }
 
   MyPacket send_packet('s', message);
-  cout << " send messsage: " << message << endl;
+  cout << "   send messsage: " << message;
   send(target_sockfd, send_packet.to_string().c_str(), send_packet.to_string().size(), 0);
   type_a(client_sockfd, "already send the message!");
 }
 
 void type_a(int client_sockfd, string message){
   MyPacket send_packet('a', message);
-  cout << " send messsage: " << message << endl;
+  cout << "   send messsage: " << message;
   send(client_sockfd, send_packet.to_string().c_str(), send_packet.to_string().size(), 0);
 }
 

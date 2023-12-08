@@ -23,7 +23,7 @@ MyPacket::MyPacket(char type, std::string data, char target)
   this->message = data;
 }
 
-void MyPacket::init_packet(char type, std::string data = "", char target = 0)
+void MyPacket::init_packet(char type, std::string data, char target)
 {
   this->type = type;
   this->target = target;
