@@ -2,7 +2,21 @@
 
 MyPacket::MyPacket(){}
 
-MyPacket::MyPacket(char type, std::string data = "", char target = 0)
+MyPacket::MyPacket(char type)
+{
+  this->type = type;
+  this->target = 0;
+  this->message = "";
+}
+
+MyPacket::MyPacket(char type, std::string data)
+{
+  this->type = type;
+  this->target = 0;
+  this->message = data;
+}
+
+MyPacket::MyPacket(char type, std::string data, char target)
 {
   this->type = type;
   this->target = target;
@@ -38,6 +52,7 @@ std::string MyPacket::to_string()
 //将收到的string转换为MyPacket
 MyPacket to_MyPacket(std::string recv_mes){
   MyPacket res;
-  res.init_packet(recv_mes[7], recv_mes.substr(9), recv_mes[8]);
+  std::string flag = PACKETFLAG;
+  res.init_packet(recv_mes[flag.length()], recv_mes.substr(flag.length() + 2), recv_mes[flag.length() + 1]);
   return res;
 }
