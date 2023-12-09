@@ -240,7 +240,7 @@ int main(){
                 if(op == 6) break;
                 std::string str = msg_s.to_string();
                 const char* msg = str.c_str();
-                if(send(tcp_socket, msg, sizeof(msg), 0) == -1)
+                if(send(tcp_socket, msg, str.size(), 0) == -1)
                     throw("请求发送失败!");
                 else{
                     std::cout << "\033[32m[System]\033[0m 请求成功发送, 请稍等..." << std::endl;

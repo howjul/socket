@@ -124,13 +124,15 @@ void *handle_client(void* thread_info){
   while(true){
     //调用recv函数接收数据
     ssize_t res = recv(client_sockfd, buffer, MAX_BUFFER, 0);
-    cout << buffer << res << endl;
+    cout << buffer << " " << res << endl;
     //若recv返回0，则连接已经关闭，直接break
     if(res == 0) break; 
 
     //将收到的数组转换为数据包
+    //cout << 0;
     string recv_str(buffer);
-    MyPacket recv_packet = to_MyPacket(recv_str);
+    cout << recv_str << endl;
+    MyPacket recv_packet = to_MyPacket(recv_str); //error
 
     //处理请求
     cout << "[" << list_num << "]handle request..." << endl;

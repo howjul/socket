@@ -43,9 +43,9 @@ std::string MyPacket::get_message() { return message; }
 std::string MyPacket::to_string()
 {
   std::string res = PACKETFLAG;
-  res += type;
-  res += target;
-  res += message;
+  res.push_back(type);
+  res.push_back(target);
+  res.append(message);
   return res;
 }
 
@@ -53,6 +53,14 @@ std::string MyPacket::to_string()
 MyPacket to_MyPacket(std::string recv_mes){
   MyPacket res;
   std::string flag = PACKETFLAG;
-  res.init_packet(recv_mes[flag.length()], recv_mes.substr(flag.length() + 2), recv_mes[flag.length() + 1]);
+  std::string message;
+  try{
+    message = recv_mes.substr(flag.length() + 2);
+  }catch(std::exception& e){
+    std::cerr << "Caught exception of type: " << typeid(e).name() << std::endl;
+    std::cout << "Standard exception: " << e.what() << std::endl;  
+    exit(1);
+  }
+  res.init_packet(recv_mes[flag.length()], message, recv_mes[flag.length() + 1]);
   return res;
 }
