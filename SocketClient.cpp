@@ -238,16 +238,14 @@ int main(){
             }
             try{
                 if(op == 6) break;
-                
-                    std::string str = msg_s.to_string();
-                    const char* msg = str.c_str();
-                    if(send(tcp_socket, msg, sizeof(msg), 0) == -1)
-                        throw("请求发送失败!");
-                    else{
-                        std::cout << "\033[32m[System]\033[0m 请求成功发送, 请稍等..." << std::endl;
-                        std::this_thread::sleep_for(std::chrono::seconds(5));
-                    }
-                
+                std::string str = msg_s.to_string();
+                const char* msg = str.c_str();
+                if(send(tcp_socket, msg, sizeof(msg), 0) == -1)
+                    throw("请求发送失败!");
+                else{
+                    std::cout << "\033[32m[System]\033[0m 请求成功发送, 请稍等..." << std::endl;
+                    std::this_thread::sleep_for(std::chrono::seconds(5));
+                }
             } catch (const std::exception& e) {
                 std::cout << "\033[31m[System]\033[0m 发生异常: " << e.what() << std::endl;
             }        

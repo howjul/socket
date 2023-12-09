@@ -5,14 +5,14 @@ MyPacket::MyPacket(){}
 MyPacket::MyPacket(char type)
 {
   this->type = type;
-  this->target = 0;
+  this->target = 1;
   this->message = "";
 }
 
 MyPacket::MyPacket(char type, std::string data)
 {
   this->type = type;
-  this->target = 0;
+  this->target = 1;
   this->message = data;
 }
 
