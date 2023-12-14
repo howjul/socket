@@ -76,8 +76,6 @@ void MyServer::on(){
     pthread_t thread;
     struct thread_info info = {list_num, client_sockfd, client_addr, this};
     pthread_create(&thread, NULL, handle_client, (void *)&info);
-    if(is_end && !check_client_list())
-      exit(0);
   }
 }
 

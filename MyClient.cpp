@@ -68,7 +68,8 @@ std::optional<std::string> input_until_valid(bool (*check_func)(const std::strin
     std::string str;
     while(true){
         try {
-            std::cin >> str;
+            // std::cin >> str;
+            std::getline(std::cin, str);
             if (str == "-1") 
                 return std::nullopt;
             
