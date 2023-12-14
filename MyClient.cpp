@@ -11,6 +11,7 @@
 #include <regex>
 #include <string>
 #include <optional>
+#include <cstring>
 #include <chrono>
 #define head_signal "zhz&nzh"
 #define MAXSIZE 1024
@@ -59,7 +60,7 @@ void recv_msg_thread(){
         MyPacket recv_packet;
         if(!p.has_value()) continue;
         else recv_packet = p.value();
-        std::cout << "\033[35m[Server]\033[0m " << recv_packet.message << std::endl;
+        std::cout << "\033[35m[Server]\033[0m " << recv_packet.get_message() << std::endl;
     }
 }
 

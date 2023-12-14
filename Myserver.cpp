@@ -21,7 +21,7 @@ MyServer::MyServer()
   server_addr.sin_addr.s_addr = inet_addr("127.0.0.1");
 
   //绑定服务器套接字和服务器地址
-  //bind(server_sockfd, (sockaddr*)&server_addr, sizeof(server_addr));
+  // bind(server_sockfd, (sockaddr*)&server_addr, sizeof(server_addr));
   if(bind(server_sockfd, (sockaddr*)&server_addr, sizeof(server_addr)) != 0){
     close(server_sockfd);
     cout << "Bind error!" << endl;
@@ -114,9 +114,9 @@ bool MyServer::check_client_list(){
   return client_list_situation[0];
 }
 
-void MyServer::rst_client_list(int list_num, int server_sockfd){
+void MyServer::rst_client_list(int list_num){
   client_list_situation[list_num] = 0;
-  client_list.erase(server_sockfd);
+  client_list.erase(list_num);
 }
 
 void *handle_client(void* thread_info){
@@ -135,7 +135,7 @@ void *handle_client(void* thread_info){
   while(true){
     //调用recv函数接收数据
     ssize_t res = recv(client_sockfd, buffer, MAX_BUFFER, 0);
-    cout << buffer << " " << res << endl;
+    //cout << buffer << " " << res << endl;
     //若recv返回0，则连接已经关闭，直接break
     if(res == 0) break; 
 
@@ -161,7 +161,7 @@ void *handle_client(void* thread_info){
 
   close(client_sockfd); //关闭客户端套接字
   std::lock_guard<std::mutex> lock(mutex);
-  primary_server.rst_client_list(list_num, client_sockfd); //释放
+  primary_server.rst_client_list(list_num); //释放
 
   return 0;
 }

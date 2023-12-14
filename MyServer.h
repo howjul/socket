@@ -48,7 +48,7 @@ class MyServer{
     string get_list();
     int find_in_list(int id);
     void set_client_list(int list_num);
-    void rst_client_list(int list_num, int server_sockfd);
+    void rst_client_list(int list_num);
     bool check_client_list();
     void set_is_end_true();
 };

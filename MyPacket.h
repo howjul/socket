@@ -12,9 +12,9 @@ class MyPacket
   private:
     char type; //消息类型
     char target; //发送目标
+    std::string message; //发送内容
     
   public:
-    std::string message; //发送内容
     MyPacket(); //构造函数
     MyPacket(char type);
     MyPacket(char type, std::string data);
