@@ -44,6 +44,10 @@ MyServer::~MyServer(){
   close(server_sockfd);
 }
 
+void MyServer::set_is_end_true(){
+  is_end = true;
+}
+
 void MyServer::on(){
   cout << "Server starts working!" << endl;
   while(true){
@@ -72,6 +76,8 @@ void MyServer::on(){
     pthread_t thread;
     struct thread_info info = {list_num, client_sockfd, client_addr, this};
     pthread_create(&thread, NULL, handle_client, (void *)&info);
+    if(is_end && !check_client_list())
+      exit(0);
   }
 }
 
@@ -87,7 +93,7 @@ string MyServer::get_list(){
   ss << endl;
   map<int, struct client_info>::iterator it;
   for (it = client_list.begin(); it != client_list.end(); it++) {
-    ss << "id" << it->first << ": [";
+    ss << "id" << it->first + 1 << ": [";
     ss << inet_ntoa((it->second).client_addr.sin_addr);
     ss << ntohs((it->second).client_addr.sin_port);
     ss << "]" << endl;
@@ -104,8 +110,13 @@ void MyServer::set_client_list(int list_num){
   client_list_situation[list_num] = 1;
 }
 
-void MyServer::rst_client_list(int list_num){
+bool MyServer::check_client_list(){
+  return client_list_situation[0];
+}
+
+void MyServer::rst_client_list(int list_num, int server_sockfd){
   client_list_situation[list_num] = 0;
+  client_list.erase(server_sockfd);
 }
 
 void *handle_client(void* thread_info){
@@ -132,19 +143,27 @@ void *handle_client(void* thread_info){
     //cout << 0;
     string recv_str(buffer);
     cout << recv_str << endl;
-    MyPacket recv_packet = to_MyPacket(recv_str); //error
+    MyPacket recv_packet;
+    auto recv = to_MyPacket(recv_str); //error
+    if(!recv.has_value()) continue;
+    else recv_packet = recv.value();
 
     //处理请求
     cout << "[" << list_num << "]handle request..." << endl;
     res = handle_request(recv_packet, info);
 
     //如果收到退出请求，则返回0
-    if(res == 1) break;
+    if(res == 1){
+      primary_server.set_is_end_true();
+      break;
+    } 
   }
 
   close(client_sockfd); //关闭客户端套接字
-  server.rst_client_list(list_num); //释放
-  exit(0);
+  std::lock_guard<std::mutex> lock(mutex);
+  primary_server.rst_client_list(list_num, client_sockfd); //释放
+
+  return 0;
 }
 
 int handle_request(MyPacket request, struct thread_info info){
@@ -200,6 +219,14 @@ void type_d(int client_sockfd){
   send(client_sockfd, send_packet.to_string().c_str(), send_packet.to_string().size(), 0);
 }
 
+void type_c(int client_sockfd){
+  string message("disconnect");
+
+  MyPacket send_packet('c', message);
+  cout << "   send messsage: " << message;
+  send(client_sockfd, send_packet.to_string().c_str(), send_packet.to_string().size(), 0);
+}
+
 void type_e(int client_sockfd){
   string message("error request type");
 
@@ -228,12 +255,12 @@ void type_l(int client_sockfd, MyServer server){
 }
 
 void type_s(int client_sockfd, char targetid, string message, MyServer server){
-  int target_sockfd = server.find_in_list(targetid);
+  int target_sockfd = server.find_in_list(targetid - 1);
   if(target_sockfd == -1){
     type_a(client_sockfd, "target id not exist!");
     return;
   }
-
+  std::cout << "sockfd: " << target_sockfd << std::endl;
   MyPacket send_packet('s', message);
   cout << "   send messsage: " << message;
   send(target_sockfd, send_packet.to_string().c_str(), send_packet.to_string().size(), 0);
@@ -248,7 +275,6 @@ void type_a(int client_sockfd, string message){
 
 
 int main(){
-  MyServer server;
-  server.on();
+  primary_server.on();
   return 0;
 }

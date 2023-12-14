@@ -5,14 +5,14 @@ MyPacket::MyPacket(){}
 MyPacket::MyPacket(char type)
 {
   this->type = type;
-  this->target = 1;
+  this->target = '1';
   this->message = "";
 }
 
 MyPacket::MyPacket(char type, std::string data)
 {
   this->type = type;
-  this->target = 1;
+  this->target = '1';
   this->message = data;
 }
 
@@ -50,10 +50,12 @@ std::string MyPacket::to_string()
 }
 
 //将收到的string转换为MyPacket
-MyPacket to_MyPacket(std::string recv_mes){
+std::optional<MyPacket> to_MyPacket(std::string recv_mes){
   MyPacket res;
   std::string flag = PACKETFLAG;
   std::string message;
+  if(recv_mes.length() <= 9 || recv_mes.substr(0, 7) != PACKETFLAG)
+    return std::nullopt;
   try{
     message = recv_mes.substr(flag.length() + 2);
   }catch(std::exception& e){

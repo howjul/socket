@@ -14,6 +14,8 @@
 #include<sys/un.h>
 #include<netdb.h>
 #include<unistd.h>
+#include<chrono>
+#include<mutex>
 
 #include"MyPacket.h"
 
@@ -23,6 +25,8 @@
 #define MAX_BUFFER 1024 //首发数据缓冲区大小
 
 using namespace std;
+
+
 
 struct client_info{
   int client_sockfd; //客户端套接字
@@ -35,6 +39,7 @@ class MyServer{
     sockaddr_in server_addr; //服务器地址
     map<int, struct client_info> client_list; //客户端列表
     int client_list_situation[MAX_CLIENT]; //客户端列表的占用情况
+    bool is_end = false;
   public:
     MyServer(); //构造函数，初始化服务器
     ~MyServer(); //析构函数
@@ -43,7 +48,9 @@ class MyServer{
     string get_list();
     int find_in_list(int id);
     void set_client_list(int list_num);
-    void rst_client_list(int list_num);
+    void rst_client_list(int list_num, int server_sockfd);
+    bool check_client_list();
+    void set_is_end_true();
 };
 
 struct thread_info{
@@ -53,11 +60,14 @@ struct thread_info{
   MyServer* server; 
 };
 
+MyServer primary_server;
+
 void* handle_client(void* thread_info); //处理客户端请求
 int handle_request(MyPacket request, struct thread_info info); //处理单个请求
 void type_t(int client_sockfd);
 void type_n(int client_sockfd);
 void type_d(int client_sockfd);
+void type_c(int client_sockfd);
 void type_e(int client_sockfd);
 void type_h(int client_sockfd, sockaddr_in client_addr);
 void type_a(int client_sockfd, string message);

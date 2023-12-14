@@ -49,14 +49,17 @@ bool is_valid_id(const std::string& input) {
 
 void recv_msg_thread(){
     std::string buf_str;
-    std::this_thread::sleep_for(std::chrono::seconds(5));
+    // std::this_thread::sleep_for(std::chrono::seconds(5));
     while(is_connected){
         char buf[MAXSIZE];
+        memset(buf, 0, sizeof(buf));
         recv(tcp_socket, buf, sizeof(buf) - 1, 0);
-        MyPacket p = to_MyPacket(buf);
-        if (strncmp(buf, head_signal, 7) == 0){
-            std::cout << "\033[35m[Server]\033[0m " << p.message << std::endl;
-        }
+        auto p = to_MyPacket(buf);
+        memset(buf, 0, sizeof(buf));
+        MyPacket recv_packet;
+        if(!p.has_value()) continue;
+        else recv_packet = p.value();
+        std::cout << "\033[35m[Server]\033[0m " << recv_packet.message << std::endl;
     }
 }
 
@@ -215,7 +218,7 @@ int main(){
                 case 4: 
                     dst = input_id_and_msg();
                     if(dst.has_value())
-                        msg_s.init_packet('t', dst.value().second, dst.value().first);
+                        msg_s.init_packet('s', dst.value().second, dst.value().first);
                     else
                         throw("无效id, 请查询正确的客户端id后再发送!");
                     break;
@@ -223,13 +226,11 @@ int main(){
                 case 5:
                     msg_s.init_packet('d');
                     is_connected = false;
-                    close(tcp_socket);
                     break;
 
                 case 6:
                     msg_s.init_packet('d');
                     is_connected = false;
-                    close(tcp_socket);
                     break;
 
                 default:
@@ -237,15 +238,16 @@ int main(){
 
             }
             try{
-                if(op == 6) break;
                 std::string str = msg_s.to_string();
                 const char* msg = str.c_str();
                 if(send(tcp_socket, msg, str.size(), 0) == -1)
                     throw("请求发送失败!");
                 else{
                     std::cout << "\033[32m[System]\033[0m 请求成功发送, 请稍等..." << std::endl;
-                    std::this_thread::sleep_for(std::chrono::seconds(5));
+                    std::this_thread::sleep_for(std::chrono::seconds(1));
                 }
+                if(!is_connected)
+                    close(tcp_socket);
             } catch (const std::exception& e) {
                 std::cout << "\033[31m[System]\033[0m 发生异常: " << e.what() << std::endl;
             }        
