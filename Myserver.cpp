@@ -1,6 +1,7 @@
 #include"MyServer.h"
 #include"MyPacket.h"
 
+/************************************************服务器类主要函数*****************************************************/
 MyServer::MyServer()
 { 
   //占用情况全部清零
@@ -17,7 +18,8 @@ MyServer::MyServer()
   //初始化服务器地址
   server_addr.sin_family = AF_INET;
   server_addr.sin_port = htons(PORT);
-  //server_addr.sin_addr.s_addr = htonl(INADDR_ANY); //表示监听0.0.0.0地址，socket只绑定端口，不绑定本主机的某个特定ip，让路由表决定传到哪个ip
+  //server_addr.sin_addr.s_addr = htonl(INADDR_ANY); 
+  //表示监听0.0.0.0地址，socket只绑定端口，不绑定本主机的某个特定ip，让路由表决定传到哪个ip
   server_addr.sin_addr.s_addr = inet_addr("127.0.0.1");
 
   //绑定服务器套接字和服务器地址
@@ -39,13 +41,7 @@ MyServer::MyServer()
   cout << "Server successfully initialized!" << endl;
 }
 
-MyServer::~MyServer(){
-  close(server_sockfd);
-}
-
-void MyServer::set_is_end_true(){
-  _is_end = true;
-}
+MyServer::~MyServer(){ close(server_sockfd); }
 
 void MyServer::on(){
   cout << "Server starts working!" << endl;
@@ -78,14 +74,13 @@ void MyServer::on(){
   }
 }
 
-int MyServer::get_list_num(){
-  for(int i = 0; i < MAX_CLIENT; i++)
-    if(client_list_situation[i] == 0)
-      return i;
-  return -1;
-}
+/************************************************服务器接口函数*****************************************************/
+void MyServer::set_client_list(int list_num){ client_list_situation[list_num] = 1; }
 
-int MyServer::get_server_sockfd(){ return server_sockfd; }
+void MyServer::rst_client_list(int list_num){
+  client_list_situation[list_num] = 0;
+  client_list.erase(list_num);
+}
 
 string MyServer::get_list(){
   stringstream ss;
@@ -100,17 +95,26 @@ string MyServer::get_list(){
   return ss.str();
 }
 
-bool MyServer::is_end(){
-  return _is_end;
+int MyServer::get_server_sockfd(){ return server_sockfd; }
+void MyServer::set_is_end_true(){ _is_end = true; }
+bool MyServer::is_end(){ return _is_end; }
+
+/************************************************服务器辅助函数*****************************************************/
+//获得一个客户端列表的序号
+int MyServer::get_list_num(){
+  for(int i = 0; i < MAX_CLIENT; i++)
+    if(client_list_situation[i] == 0)
+      return i;
+  return -1;
 }
 
+//通过id查找客户端套接字
 int MyServer::find_in_list(int id){
   if(client_list_situation[id] == 1) return client_list[id].client_sockfd;
   else return -1;
 }
 
-void MyServer::set_client_list(int list_num){ client_list_situation[list_num] = 1; }
-
+//检查客户端列表是否为空
 bool MyServer::check_client_list(){
   for(int i = 0; i < MAX_CLIENT; i++){
     if(client_list_situation[i] == 1) return 1;
@@ -118,11 +122,8 @@ bool MyServer::check_client_list(){
   return 0;
 }
 
-void MyServer::rst_client_list(int list_num){
-  client_list_situation[list_num] = 0;
-  client_list.erase(list_num);
-}
-
+/************************************************处理客户端请求函数*****************************************************/
+//为客户端单独创建一个线程处理请求
 void *handle_client(void* thread_info){
   //接受参数
   struct thread_info info = *((struct thread_info*)thread_info);
@@ -163,6 +164,8 @@ void *handle_client(void* thread_info){
   close(client_sockfd); //关闭客户端套接字
   std::lock_guard<std::mutex> lock(mutex);
   primary_server.rst_client_list(list_num); //释放
+
+  //如果所有客户端都已经退出，则服务器退出
   if(primary_server.is_end() && !primary_server.check_client_list()){
     cout << "All the client disconnected! Server timinate!" << endl;
     close(primary_server.get_server_sockfd());
@@ -172,6 +175,7 @@ void *handle_client(void* thread_info){
   return 0;
 }
 
+//处理单个请求
 int handle_request(MyPacket request, struct thread_info info, int request_id){
   //拆开数据包
   char type = request.get_type();
@@ -191,97 +195,114 @@ int handle_request(MyPacket request, struct thread_info info, int request_id){
   return 0;
 }
 
-void type_t(int client_sockfd){
-  time_t timep;
-  struct tm *p;
-
-  time(&timep); //获取从1970至今过了多少秒，存入time_t类型的timep
-  p = localtime(&timep); //用localtime将秒数转化为struct tm结构体
-
-  stringstream ss;
-  ss << 1900 + p->tm_year << "年" << 1+ p->tm_mon << "月" << p->tm_mday << "日" << " ";
-  ss << p->tm_hour << ":" << p->tm_min << ":" << p->tm_sec;
-
-  MyPacket send_packet('t', ss.str());
-  cout << "   send messsage: " << ss.str() << endl;
-  send(client_sockfd, send_packet.to_string().c_str(), send_packet.to_string().size(), 0);
-}
-
-void type_n(int client_sockfd){
-  char name[256];
-  gethostname(name, sizeof(name));
-  string hostname(name);
-
-  MyPacket send_packet('n', hostname);
-  cout << "   send messsage: " << hostname << endl;
-  send(client_sockfd, send_packet.to_string().c_str(), send_packet.to_string().size(), 0);
-}
-
-void type_d(int client_sockfd){
-  string message("disconnect");
-
-  MyPacket send_packet('d', message);
-  cout << "   send messsage: " << message << endl;
-  send(client_sockfd, send_packet.to_string().c_str(), send_packet.to_string().size(), 0);
-}
-
-void type_c(int client_sockfd){
-  string message("disconnect");
-
-  MyPacket send_packet('c', message);
-  cout << "   send messsage: " << message << endl;
-  send(client_sockfd, send_packet.to_string().c_str(), send_packet.to_string().size(), 0);
-}
-
-void type_e(int client_sockfd){
-  string message("error request type");
-
-  MyPacket send_packet('e', message);
-  cout << "   send messsage: " << message << endl;
-  send(client_sockfd, send_packet.to_string().c_str(), send_packet.to_string().size(), 0);
-}
-
+/************************************************具体请求处理函数*****************************************************/
+//成功连接响应
 void type_h(int client_sockfd, sockaddr_in client_addr){
+  //构造消息
   stringstream ss;
   ss << "hello! IP:" <<  inet_ntoa(client_addr.sin_addr) << " Port:" << ntohs(client_addr.sin_port);
   string message = ss.str();
 
+  //发送消息
   MyPacket send_packet('h', message);
   cout << "   send messsage: " << message << endl;
   send(client_sockfd, send_packet.to_string().c_str(), send_packet.to_string().size(), 0);
 }
 
+//时间请求
+void type_t(int client_sockfd){
+  //构造消息
+  time_t timep;
+  struct tm *p;
+  time(&timep); //获取从1970至今过了多少秒，存入time_t类型的timep
+  p = localtime(&timep); //用localtime将秒数转化为struct tm结构体
+  stringstream ss;
+  ss << 1900 + p->tm_year << "年" << 1+ p->tm_mon << "月" << p->tm_mday << "日" << " ";
+  ss << p->tm_hour << ":" << p->tm_min << ":" << p->tm_sec;
+
+  //发送消息
+  MyPacket send_packet('t', ss.str());
+  cout << "   send messsage: " << ss.str() << endl;
+  send(client_sockfd, send_packet.to_string().c_str(), send_packet.to_string().size(), 0);
+}
+
+//名字请求
+void type_n(int client_sockfd){
+  //构造消息
+  char name[256];
+  gethostname(name, sizeof(name));
+  string hostname(name);
+
+  //发送消息
+  MyPacket send_packet('n', hostname);
+  cout << "   send messsage: " << hostname << endl;
+  send(client_sockfd, send_packet.to_string().c_str(), send_packet.to_string().size(), 0);
+}
+
+//列表读取请求
 void type_l(int client_sockfd, MyServer server){
+  //使用get_list读取并发送消息
   MyPacket send_packet('l', server.get_list());
   cout << "   send messsage: " << server.get_list();
   send(client_sockfd, send_packet.to_string().c_str(), send_packet.to_string().size(), 0);
 }
 
+//转发请求
 void type_s(int client_sockfd, int client_id, char targetid, string message, MyServer server){
+  //首先检查目标id是否存在
   int target_sockfd = server.find_in_list(targetid - 1);
   if(target_sockfd == -1){
     type_a(client_sockfd, "target id not exist!");
     return;
   }
 
+  //构造消息
   string mes = "From [";
   mes.push_back(client_id + 1 + '0');
   mes.append("]: ");
   mes.append(message);
 
+  //发送消息
   MyPacket send_packet('s', mes);
   cout << "   send messsage to ["<< (int)targetid  << "]: " << mes << endl;
   send(target_sockfd, send_packet.to_string().c_str(), send_packet.to_string().size(), 0);
+
+  //发送确认回复
   type_a(client_sockfd, "already send the message!");
 }
 
+//转发确认回复
 void type_a(int client_sockfd, string message){
+  //发送传入的messaeg
   MyPacket send_packet('a', message);
   cout << "   send messsage: " << message << endl;
   send(client_sockfd, send_packet.to_string().c_str(), send_packet.to_string().size(), 0);
 }
 
+//断开连接请求
+void type_d(int client_sockfd){
+  //构造消息
+  string message("disconnect");
 
+  //发送消息
+  MyPacket send_packet('d', message);
+  cout << "   send messsage: " << message << endl;
+  send(client_sockfd, send_packet.to_string().c_str(), send_packet.to_string().size(), 0);
+}
+
+//未知类型请求
+void type_e(int client_sockfd){
+  //构造消息
+  string message("error request type");
+
+  //发送消息
+  MyPacket send_packet('e', message);
+  cout << "   send messsage: " << message << endl;
+  send(client_sockfd, send_packet.to_string().c_str(), send_packet.to_string().size(), 0);
+}
+
+
+/************************************************主函数*****************************************************/
 int main(){
   primary_server.on();
   return 0;

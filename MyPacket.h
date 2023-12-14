@@ -16,8 +16,8 @@ class MyPacket
     
   public:
     MyPacket(); //构造函数
-    MyPacket(char type);
-    MyPacket(char type, std::string data);
+    MyPacket(char type); //构造函数
+    MyPacket(char type, std::string data); //构造函数
     MyPacket(char type, std::string data, char target); //构造函数
     void init_packet(char type, std::string data = "1", char target = '1'); //初始化MyPacket
     char get_type(); //获取消息类型

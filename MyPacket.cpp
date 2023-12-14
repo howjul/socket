@@ -54,8 +54,12 @@ std::optional<MyPacket> to_MyPacket(std::string recv_mes){
   MyPacket res;
   std::string flag = PACKETFLAG;
   std::string message;
+
+  //首先进行消息的检验
   if(recv_mes.length() <= 9 || recv_mes.substr(0, 7) != PACKETFLAG)
     return std::nullopt;
+
+  //然后进行消息的解析
   try{
     message = recv_mes.substr(flag.length() + 2);
   }catch(std::exception& e){
@@ -64,5 +68,6 @@ std::optional<MyPacket> to_MyPacket(std::string recv_mes){
     exit(1);
   }
   res.init_packet(recv_mes[flag.length()], message, recv_mes[flag.length() + 1]);
+  
   return res;
 }
