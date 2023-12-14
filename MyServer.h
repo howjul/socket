@@ -19,13 +19,12 @@
 
 #include"MyPacket.h"
 
-#define PORT 3283 //服务器端口号
+#define PORT 13283 //服务器端口号
 #define MAX_BACKLOG 5 //请求连接队列的最大长度
 #define MAX_CLIENT 64 //最大客户端连接数
 #define MAX_BUFFER 1024 //首发数据缓冲区大小
 
 using namespace std;
-
 
 
 struct client_info{
@@ -46,6 +45,7 @@ class MyServer{
     void on(); //启动服务器
     int get_list_num(); //获得一个list的序号
     string get_list();
+    int get_server_sockfd();
     int find_in_list(int id);
     void set_client_list(int list_num);
     void rst_client_list(int list_num);
@@ -64,7 +64,7 @@ struct thread_info{
 MyServer primary_server;
 
 void* handle_client(void* thread_info); //处理客户端请求
-int handle_request(MyPacket request, struct thread_info info); //处理单个请求
+int handle_request(MyPacket request, struct thread_info info, int request_id); //处理单个请求
 void type_t(int client_sockfd);
 void type_n(int client_sockfd);
 void type_d(int client_sockfd);
@@ -73,6 +73,6 @@ void type_e(int client_sockfd);
 void type_h(int client_sockfd, sockaddr_in client_addr);
 void type_a(int client_sockfd, string message);
 void type_l(int client_sockfd, MyServer server);
-void type_s(int client_sockfd, char targetid, string message, MyServer server);
+void type_s(int client_sockfd, int client_id, char targetid, string message, MyServer server);
 
 #endif
