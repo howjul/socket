@@ -39,7 +39,7 @@ class MyServer{
     sockaddr_in server_addr; //服务器地址
     map<int, struct client_info> client_list; //客户端列表
     int client_list_situation[MAX_CLIENT]; //客户端列表的占用情况
-    bool is_end = false;
+    bool _is_end = false;
   public:
     MyServer(); //构造函数，初始化服务器
     ~MyServer(); //析构函数
@@ -51,6 +51,7 @@ class MyServer{
     void rst_client_list(int list_num);
     bool check_client_list();
     void set_is_end_true();
+    bool is_end();
 };
 
 struct thread_info{
