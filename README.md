@@ -39,6 +39,13 @@ g++ -std=c++17 MyServer.cpp MyPacket.cpp -o server
 ./server
 ```
 
+使用说明：
+
+- 只需要运行即可，初始化成功会打印成功的信息；
+- 当有客户端连接时，会打印相关的信息；
+- 当客户端发送请求时，会打印相关的信息，并打印从服务端发送给客户端的信息；
+- 当所有客户端断开连接时，服务端自动退出。
+
 # 3.client
 
 运行客户端：
@@ -50,7 +57,9 @@ g++ -std=c++17 MyClient.cpp MyPacket.cpp -o client
 ./client
 ```
 
+使用说明：
 
+- //TODO
 
 
 
