@@ -1,4 +1,8 @@
-# socket
+# 1.数据包格式及描述
+| flag | type | target_id | message |
+| --------- | ---------------- | ---- | ---- |
+| ”zhz&nzh“ | char | char，只在请求类型为‘s’的时候有效，默认为'1'。 | string，只在请求类型为‘s’的时候有效，默认为"1"。 |
+
 
 | 请求类型 | 数据包格式                    | 描述                 |
 | -------- | ----------------------------- | -------------------- |
@@ -24,9 +28,27 @@
 | h        | 'h'+"connect successfully"                        | 成功连接指示           |
 | s        | 's'+"(message)"                                   | 发送消息给指定客户端   |
 
+# 2.server
 
+运行服务端：
 
+```bash
+# 假设当前目录为工程文件根目录即README.md所在目录
+cd server
+g++ -std=c++17 MyServer.cpp MyPacket.cpp -o server
+./server
+```
 
+# 3.client
+
+运行客户端：
+
+```bash
+# 假设当前目录为工程文件根目录即README.md所在目录
+cd client
+g++ -std=c++17 MyClient.cpp MyPacket.cpp -o client
+./client
+```
 
 
 
