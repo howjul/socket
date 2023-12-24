@@ -12,10 +12,11 @@
 #include <chrono>
 #define head_signal "zhz&nzh"
 #define MAXSIZE 1024
-#define test 1
+#define test 0
 bool is_connected = false;
 bool first_use = true;
 int tcp_socket;
+int recv_respond_time = -1;
 std::mutex mtx; 
 
 class Validator {

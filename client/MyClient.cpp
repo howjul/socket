@@ -40,7 +40,8 @@ void recv_msg_thread(){
         MyPacket recv_packet;
         if(!p.has_value()) continue;
         else recv_packet = p.value();
-        std::cout << "\033[35m[Server]\033[0m " << recv_packet.get_message() << std::endl;
+        recv_respond_time++;
+        std::cout << "\033[35m[Server]\033[0m " << recv_packet.get_message() << " " << recv_respond_time << std::endl;
     }
 }
 
@@ -227,7 +228,7 @@ void User(){
                 std::string str = msg_s.to_string();
                 const char* msg = str.c_str();
             #if test
-                for(int i = 1; i <= 100; i++){
+                for(int i = 1; i <= 1000; i++){
                     if(send(tcp_socket, msg, str.size(), 0) == -1)
                         throw("请求发送失败!");
                     sleep(0);
