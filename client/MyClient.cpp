@@ -1,27 +1,8 @@
 #include <iostream>
 #include "MyPacket.h"
-#include <sys/socket.h>
-#include <arpa/inet.h>
-#include <unistd.h>
-#include <map>
-#include <limits>
-#include <thread>
-#include <mutex>
-#include <regex>
-#include <string>
-#include <optional>
-#include <chrono>
-#include <errno.h>
-#define head_signal "zhz&nzh"
-#define MAXSIZE 1024
-bool is_connected = false;
-bool first_use = true;
-int tcp_socket;
+#include "MyClient.h"
 
-
-std::mutex mtx; 
-
-bool is_valid_op(const std::string& input) {
+bool Validator::is_valid_op(const std::string& input) {
     if (!std::isdigit(input[0]))
         throw std::runtime_error("非法输入!");
 
@@ -29,7 +10,7 @@ bool is_valid_op(const std::string& input) {
     return ((is_connected && op <= 6 && op >= 1) || (!is_connected && op <= 2 && op >= 1));
 }
 
-bool is_valid_ip(const std::string& input) {
+bool Validator::is_valid_ip(const std::string& input) {
     // IP 地址的正则表达式模式
     std::regex pattern(R"((\b(?:\d{1,3}\.){3}\d{1,3}\b))");
 
@@ -37,19 +18,19 @@ bool is_valid_ip(const std::string& input) {
     return std::regex_match(input, pattern);
 } 
 
-bool is_valid_port(const std::string& input) {
+bool Validator::is_valid_port(const std::string& input) {
     int port = std::stoi(input);
     return (port >= 0 && port <= 65535);
 }
 
-bool is_valid_id(const std::string& input) {
+bool Validator::is_valid_id(const std::string& input) {
     int id = std::stoi(input);
     return (id >= 0 && id <= 255);
 }
 
+/* 用于接收消息的子线程 */
 void recv_msg_thread(){
     std::string buf_str;
-    // std::this_thread::sleep_for(std::chrono::seconds(5));
     while(is_connected){
         char buf[MAXSIZE];
         memset(buf, 0, sizeof(buf));
@@ -63,11 +44,12 @@ void recv_msg_thread(){
     }
 }
 
-std::optional<std::string> input_until_valid(bool (*check_func)(const std::string&)= [](const std::string&) { return true; }){
+/* 检测输入合法性 */
+std::optional<std::string> Interactor::input_until_valid(bool (*check_func)(const std::string&)){
     std::string str;
     while(true){
         try {
-            std::cin >> str;
+            std::getline(std::cin, str);
             if (str == "-1") 
                 return std::nullopt;
             
@@ -86,7 +68,8 @@ std::optional<std::string> input_until_valid(bool (*check_func)(const std::strin
     }    
 }
 
-int print_menu_list(){
+/* 打印功能菜单 */
+int Interactor::print_menu_list(){
     std::cout << "\033[33m************功能菜单************" << std::endl;
     if(!is_connected){
         std::cout << "* 1. 连接                      *" << std::endl;
@@ -105,7 +88,7 @@ int print_menu_list(){
     std::cout << "\033[34m[Client]\033[0m ";
 
     
-    std::optional<std::string> op = input_until_valid(is_valid_op);
+    std::optional<std::string> op = input_until_valid(Validator::is_valid_op);
     if(op.has_value()) 
         return std::stoi(op.value());
     else{
@@ -116,20 +99,21 @@ int print_menu_list(){
     }
 }
 
-std::optional<std::pair<std::string, unsigned int>> input_ip_and_port(){
+/* 输入连接服务器的ip和端口号 */
+std::optional<std::pair<std::string, unsigned int>> Interactor::input_ip_and_port(){
     std::optional<std::string> ip;
     std::optional<std::string> port;
     std::pair<std::string, unsigned int> dst;
 
     std::cout << "\033[32m[System]\033[0m 请输入服务器的IP地址:(-1强制退出)" << std::endl;
-    ip = input_until_valid(is_valid_ip);
+    ip = input_until_valid(Validator::is_valid_ip);
     if(ip.has_value()) 
         dst.first = ip.value();
     else
         return std::nullopt;
     
     std::cout << "\033[32m[System]\033[0m 请输入服务器的端口:(-1强制退出)" << std::endl;
-    port = input_until_valid(is_valid_port);
+    port = input_until_valid(Validator::is_valid_port);
     if(port.has_value()) 
         dst.second = std::stoul(port.value());
     else
@@ -138,13 +122,14 @@ std::optional<std::pair<std::string, unsigned int>> input_ip_and_port(){
     return dst;
 }
 
-std::optional<std::pair<char, std::string>> input_id_and_msg(){
+/* 输入发送信息的客户端id号以及信息内容 */
+std::optional<std::pair<char, std::string>> Interactor::input_id_and_msg(){
     std::optional<std::string> id;
     std::optional<std::string> msg;
     std::pair<char, std::string> dst;
 
     std::cout << "\033[32m[System]\033[0m 请输入发送客户端的列表编号:(-1强制退出)" << std::endl;
-    id = input_until_valid(is_valid_id);
+    id = input_until_valid(Validator::is_valid_id);
     if(id.has_value()) 
         dst.first = std::stoi(id.value());
     else
@@ -160,13 +145,14 @@ std::optional<std::pair<char, std::string>> input_id_and_msg(){
     return dst;
 }
 
-int main(){
+/* 用户主程序 */
+void User(){
     while(true){
         if(first_use) {
             first_use = false;
             std::cout << "\033[32m[System]\033[0m 欢迎!" << std::endl;
         }
-        int op = print_menu_list();
+        int op = Interactor::print_menu_list();
 
         /* 退出程序 */
         if(op == 2 && !is_connected){
@@ -176,7 +162,7 @@ int main(){
         /* 连接服务端 */
         if(op == 1 && !is_connected){
             tcp_socket = socket(AF_INET, SOCK_STREAM, 0);
-            auto dst = input_ip_and_port();
+            auto dst = Interactor::input_ip_and_port();
             if(!dst.has_value()) break;
 
             struct sockaddr_in serv_addr;
@@ -185,15 +171,13 @@ int main(){
             serv_addr.sin_port = htons(dst.value().second); //端口号需要转为网络序
             serv_addr.sin_addr.s_addr = inet_addr(dst.value().first.c_str());
 
-            if( connect(tcp_socket, (struct sockaddr*)&serv_addr, sizeof(serv_addr)) != -1){
+            if(connect(tcp_socket, (struct sockaddr*)&serv_addr, sizeof(serv_addr)) != -1){
                 std::cout << "\033[32m[System]\033[0m 连接成功!" << std::endl;
                 is_connected = true;
                 std::thread t(recv_msg_thread);
                 t.detach();
             }
             else{
-                int connect_error = errno;
-                fprintf(stderr, "Error conneting to server: %s\n", strerror(connect_error));
                 std::cout << "\033[31m[System]\033[0m 连接失败!" << std::endl;
                 is_connected = false;
             }
@@ -218,7 +202,7 @@ int main(){
                     break;
                 
                 case 4: 
-                    dst = input_id_and_msg();
+                    dst = Interactor::input_id_and_msg();
                     if(dst.has_value())
                         msg_s.init_packet('s', dst.value().second, dst.value().first);
                     else
@@ -239,22 +223,28 @@ int main(){
                     break;
 
             }
-            try{
+            try{          
                 std::string str = msg_s.to_string();
                 const char* msg = str.c_str();
+            #if test
+                for(int i = 1; i <= 100; i++){
+                    if(send(tcp_socket, msg, str.size(), 0) == -1)
+                        throw("请求发送失败!");
+                    sleep(0);
+                }
+                std::this_thread::sleep_for(std::chrono::seconds(1));     
+                std::cout << "\033[32m[System]\033[0m 请求成功发送, 请稍等..." << std::endl;
+                std::this_thread::sleep_for(std::chrono::seconds(1));                
+            #else 
                 if(send(tcp_socket, msg, str.size(), 0) == -1)
                     throw("请求发送失败!");
                 else{
                     std::cout << "\033[32m[System]\033[0m 请求成功发送, 请稍等..." << std::endl;
                     std::this_thread::sleep_for(std::chrono::seconds(1));
                 }
-                if (!is_connected && op == 6) {
+            #endif
+                if(!is_connected)
                     close(tcp_socket);
-                    break;
-                }
-                if (!is_connected && op == 5) {
-                    shutdown(tcp_socket, SHUT_RD);
-                }
             } catch (const std::exception& e) {
                 std::cout << "\033[31m[System]\033[0m 发生异常: " << e.what() << std::endl;
             }        
@@ -262,5 +252,9 @@ int main(){
     }
     std::this_thread::sleep_for(std::chrono::seconds(5));
     std::cout << "\033[32m[System]\033[0m 再见!" << std::endl;
+}
+
+int main(){
+    User();
     return 0;
 }
