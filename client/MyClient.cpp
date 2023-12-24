@@ -1,4 +1,3 @@
-
 #include <iostream>
 #include "MyPacket.h"
 #include <sys/socket.h>
@@ -11,8 +10,8 @@
 #include <regex>
 #include <string>
 #include <optional>
-#include <cstring>
 #include <chrono>
+#include <errno.h>
 #define head_signal "zhz&nzh"
 #define MAXSIZE 1024
 bool is_connected = false;
@@ -68,8 +67,7 @@ std::optional<std::string> input_until_valid(bool (*check_func)(const std::strin
     std::string str;
     while(true){
         try {
-            // std::cin >> str;
-            std::getline(std::cin, str);
+            std::cin >> str;
             if (str == "-1") 
                 return std::nullopt;
             
@@ -187,13 +185,15 @@ int main(){
             serv_addr.sin_port = htons(dst.value().second); //端口号需要转为网络序
             serv_addr.sin_addr.s_addr = inet_addr(dst.value().first.c_str());
 
-            if(connect(tcp_socket, (struct sockaddr*)&serv_addr, sizeof(serv_addr)) != -1){
+            if( connect(tcp_socket, (struct sockaddr*)&serv_addr, sizeof(serv_addr)) != -1){
                 std::cout << "\033[32m[System]\033[0m 连接成功!" << std::endl;
                 is_connected = true;
                 std::thread t(recv_msg_thread);
                 t.detach();
             }
             else{
+                int connect_error = errno;
+                fprintf(stderr, "Error conneting to server: %s\n", strerror(connect_error));
                 std::cout << "\033[31m[System]\033[0m 连接失败!" << std::endl;
                 is_connected = false;
             }
@@ -248,8 +248,13 @@ int main(){
                     std::cout << "\033[32m[System]\033[0m 请求成功发送, 请稍等..." << std::endl;
                     std::this_thread::sleep_for(std::chrono::seconds(1));
                 }
-                if(!is_connected)
+                if (!is_connected && op == 6) {
                     close(tcp_socket);
+                    break;
+                }
+                if (!is_connected && op == 5) {
+                    shutdown(tcp_socket, SHUT_RD);
+                }
             } catch (const std::exception& e) {
                 std::cout << "\033[31m[System]\033[0m 发生异常: " << e.what() << std::endl;
             }        

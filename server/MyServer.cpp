@@ -18,9 +18,9 @@ MyServer::MyServer()
   //初始化服务器地址
   server_addr.sin_family = AF_INET;
   server_addr.sin_port = htons(PORT);
-  //server_addr.sin_addr.s_addr = htonl(INADDR_ANY); 
+  server_addr.sin_addr.s_addr = htonl(INADDR_ANY); 
   //表示监听0.0.0.0地址，socket只绑定端口，不绑定本主机的某个特定ip，让路由表决定传到哪个ip
-  server_addr.sin_addr.s_addr = inet_addr("127.0.0.1");
+  //server_addr.sin_addr.s_addr = inet_addr("127.0.0.1");
 
   //绑定服务器套接字和服务器地址
   if(bind(server_sockfd, (sockaddr*)&server_addr, sizeof(server_addr)) != 0){
@@ -265,10 +265,14 @@ void type_s(int client_sockfd, int client_id, char targetid, string message, MyS
   //发送消息
   MyPacket send_packet('s', mes);
   cout << "   send messsage to ["<< (int)targetid  << "]: " << mes << endl;
-  send(target_sockfd, send_packet.to_string().c_str(), send_packet.to_string().size(), 0);
+  int status = send(target_sockfd, send_packet.to_string().c_str(), send_packet.to_string().size(), 0);
 
   //发送确认回复
-  type_a(client_sockfd, "already send the message!");
+  if(status < 0){
+    type_a(client_sockfd, "Send failed!");
+  }else{
+    type_a(client_sockfd, "Already send the message!");
+  }
 }
 
 //转发确认回复
