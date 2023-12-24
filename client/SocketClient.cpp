@@ -11,6 +11,7 @@
 #include <string>
 #include <optional>
 #include <chrono>
+#include <errno.h>
 #define head_signal "zhz&nzh"
 #define MAXSIZE 1024
 bool is_connected = false;
@@ -184,13 +185,15 @@ int main(){
             serv_addr.sin_port = htons(dst.value().second); //端口号需要转为网络序
             serv_addr.sin_addr.s_addr = inet_addr(dst.value().first.c_str());
 
-            if(connect(tcp_socket, (struct sockaddr*)&serv_addr, sizeof(serv_addr)) != -1){
+            if( connect(tcp_socket, (struct sockaddr*)&serv_addr, sizeof(serv_addr)) != -1){
                 std::cout << "\033[32m[System]\033[0m 连接成功!" << std::endl;
                 is_connected = true;
                 std::thread t(recv_msg_thread);
                 t.detach();
             }
             else{
+                int connect_error = errno;
+                fprintf(stderr, "Error conneting to server: %s\n", strerror(connect_error));
                 std::cout << "\033[31m[System]\033[0m 连接失败!" << std::endl;
                 is_connected = false;
             }
